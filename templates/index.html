@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNA Analizi</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>DNA Analizi</h1>
+        <div style="height: 30px; weight:30px" class="dna-image">
+            <img src="https://cdn-icons-png.flaticon.com/128/1548/1548285.png" alt="DNA">
+        </div>
+        <form id="dnaForm">
+            <label for="dna">DNA Dizisini Girin:</label><br>
+            <input type="text" id="dna" name="dna" required><br><br>
+            <button type="submit">Analiz Et</button>
+        </form>
+        <div class="result" id="result"></div>
+    </div>
+    <script>
+        document.getElementById('dnaForm').onsubmit = function(event) {
+            event.preventDefault();
+            const dna = document.getElementById('dna').value.toUpperCase();
+            const validBases = new Set(['A', 'T', 'C', 'G']);
+            let invalidIndices = [];
+
+            for (let i = 0; i < dna.length; i++) {
+                if (!validBases.has(dna[i])) {
+                    invalidIndices.push(i);
+                }
+            }
+
+            if (invalidIndices.length > 0) {
+                alert(`Lütfen doğru DNA dizisi giriniz. Hatalı yerlerin indeks numaraları: ${invalidIndices.join(', ')}`);
+            } else {
+                fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ dna })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(error => { throw new Error(error.error); });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('result').innerHTML = `
+                        <p>Analiz Sonucunuz:</p>
+                        <p>GC Oranı: ${data.gc_ratio.toFixed(2)}%</p>
+                        <p>Eşleyen DNA Dizini: ${data.complementary_sequence}</p>
+                    `;
+                })
+                .catch(error => {
+                    document.getElementById('result').innerHTML = `<p class="error-message">${error.message}</p>`;
+                });
+            }
+        };
+    </script>
+</body>
+</html>
